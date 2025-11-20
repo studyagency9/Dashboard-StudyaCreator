@@ -1,19 +1,33 @@
 import { useState, type FormEvent } from 'react';
+import { loginAdmin } from '../services/adminService';
 import { useNavigate } from 'react-router-dom';
-import { motion } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
+import Alert from '../components/Alert';
 import { Mail, Lock, Eye, EyeOff } from 'lucide-react';
 
 const LoginPage = () => {
   const [showPassword, setShowPassword] = useState(false);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [isLoading, setIsLoading] = useState(false);
+  const [status, setStatus] = useState<{ message: string; type: 'success' | 'error' } | null>(null);
   const navigate = useNavigate();
 
-  const handleLogin = (e: FormEvent) => {
+  const handleLogin = async (e: FormEvent) => {
     e.preventDefault();
-    console.log('Login attempt with:', { email, password });
-    // TODO: Implement login logic here, e.g., call an API
-    navigate('/dashboard');
+    setIsLoading(true);
+    setStatus(null);
+    try {
+      const { token } = await loginAdmin({ email, password });
+      localStorage.setItem('authToken', token);
+      setStatus({ message: 'Connexion réussie ! Redirection...', type: 'success' });
+      setTimeout(() => {
+        navigate('/dashboard');
+      }, 1500);
+    } catch (err: any) {
+      setStatus({ message: err.response?.data?.message || 'Email ou mot de passe incorrect.', type: 'error' });
+      setIsLoading(false);
+    }
   };
 
   return (
@@ -25,8 +39,11 @@ const LoginPage = () => {
           transition={{ duration: 0.5 }}
         >
           {/* Header */}
-          <div className="text-center mb-8">
-            <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-2">
+          <div className="text-center mb-6">
+            <AnimatePresence>
+              {status && <Alert type={status.type} message={status.message} />}
+            </AnimatePresence>
+          <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-2 mt-4">
               STUDYA<span className="text-primary-600">CREATOR</span>
             </h1>
                         <p className="text-gray-600 dark:text-gray-400">Connectez-vous à votre espace créatif</p>
@@ -84,12 +101,12 @@ const LoginPage = () => {
 
             {/* Submit Button */}
             <motion.button
-              type="submit"
+              type="submit" disabled={isLoading}
               className="w-full bg-primary-600 hover:bg-primary-700 text-white font-medium py-3 px-4 rounded-lg transition-colors focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2"
               whileHover={{ scale: 1.01 }}
               whileTap={{ scale: 0.99 }}
             >
-              Se connecter
+              {isLoading ? 'Connexion...' : 'Se connecter'}
             </motion.button>
           </form>
 

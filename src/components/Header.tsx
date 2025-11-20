@@ -1,7 +1,8 @@
-import { useLocation } from 'react-router-dom';
+import { useLocation, useNavigate } from 'react-router-dom';
 import { Menu, Transition } from '@headlessui/react';
 import { Fragment } from 'react';
 import { Bell, ChevronDown, User, LogOut, Settings, Menu as MenuIcon } from 'lucide-react';
+import { useAuth } from '../contexts/AuthContext';
 import ThemeToggle from './ThemeToggle';
 
 const navItems = [
@@ -13,7 +14,14 @@ const navItems = [
 
 const Header = ({ setSidebarOpen }: { setSidebarOpen: (open: boolean) => void }) => {
   const location = useLocation();
+  const navigate = useNavigate();
+  const { user, isLoading } = useAuth();
   const currentPage = navItems.find(item => item.path === location.pathname)?.name || 'Dashboard';
+
+  const handleLogout = () => {
+    localStorage.removeItem('authToken');
+    navigate('/login');
+  };
 
   return (
     <header className="h-20 bg-white/70 dark:bg-gray-800/70 backdrop-blur-lg border-b border-gray-200 dark:border-gray-700 flex items-center justify-between px-6 lg:px-8 sticky top-0 z-40">
@@ -45,8 +53,16 @@ const Header = ({ setSidebarOpen }: { setSidebarOpen: (open: boolean) => void })
                 className="w-10 h-10 rounded-full"
               />
               <div className="hidden md:block">
-                                <p className="font-semibold text-sm text-gray-800 dark:text-gray-200">John Doe</p>
-                                <p className="text-xs text-gray-500 dark:text-gray-400">Admin</p>
+                                {isLoading ? (
+                  <div className="w-24 h-4 bg-gray-200 dark:bg-gray-700 rounded animate-pulse"></div>
+                ) : user ? (
+                  <>
+                    <p className="font-semibold text-sm text-gray-800 dark:text-gray-200">{`${user.firstName} ${user.lastName}`}</p>
+                    <p className="text-xs text-gray-500 dark:text-gray-400">{user.role}</p>
+                  </>
+                ) : (
+                  <p className="font-semibold text-sm text-gray-800 dark:text-gray-200">Non connecté</p>
+                )}
               </div>
               <ChevronDown size={16} className="text-gray-500 dark:text-gray-400 hidden md:block" />
             </Menu.Button>
@@ -87,6 +103,7 @@ const Header = ({ setSidebarOpen }: { setSidebarOpen: (open: boolean) => void })
                 <Menu.Item>
                   {({ active }: { active: boolean }) => (
                     <button
+                      onClick={handleLogout}
                       className={`${active ? 'bg-primary-500 text-white' : 'text-gray-900 dark:text-gray-200'} group flex rounded-md items-center w-full px-2 py-2 text-sm`}
                     >
                       <LogOut className="mr-2 h-5 w-5" aria-hidden="true" />

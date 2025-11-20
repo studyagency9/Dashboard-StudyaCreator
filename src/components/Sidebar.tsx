@@ -1,7 +1,9 @@
 import { Link, useLocation } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Home, FileText, User, Settings, ChevronLeft, ChevronRight, ChevronDown, PlusCircle, List } from 'lucide-react';
+import { Home, FileText, User, Settings, ChevronLeft, ChevronRight, ChevronDown, PlusCircle, List, LogOut } from 'lucide-react';
 import { useState } from 'react';
+import { useAuth } from '../contexts/AuthContext';
+import { useNavigate } from 'react-router-dom';
 
 const navItems = [
   { name: 'Dashboard', icon: Home, path: '/dashboard' },
@@ -18,6 +20,13 @@ const navItems = [
 ];
 
 const Sidebar = ({ isOpen, setIsOpen }: { isOpen: boolean; setIsOpen: (isOpen: boolean) => void }) => {
+  const { user, isLoading } = useAuth();
+  const navigate = useNavigate();
+
+  const handleLogout = () => {
+    localStorage.removeItem('authToken');
+    navigate('/login');
+  };
 
   return (
     <motion.div
@@ -57,23 +66,48 @@ const Sidebar = ({ isOpen, setIsOpen }: { isOpen: boolean; setIsOpen: (isOpen: b
 
       {/* User Profile Section */}
             <div className="p-4 border-t border-gray-200 dark:border-gray-700 mt-auto">
-        <div className="flex items-center">
-          <img 
-            src="https://i.pravatar.cc/40"
-            alt="User Avatar"
-            className="w-10 h-10 rounded-full"
-          />
+        <div className="flex items-center justify-between w-full">
+          <div className="flex items-center min-w-0">
+            <img 
+              src="https://i.pravatar.cc/40"
+              alt="User Avatar"
+              className="w-10 h-10 rounded-full flex-shrink-0"
+            />
+            <AnimatePresence>
+              {isOpen && (
+                <motion.div 
+                  className="ml-3 whitespace-nowrap overflow-hidden"
+                  initial={{ opacity: 0, x: -10 }}
+                  animate={{ opacity: 1, x: 0, transition: { delay: 0.1 } }}
+                  exit={{ opacity: 0, x: -10 }}
+                >
+                  {isLoading ? (
+                    <div className="space-y-1">
+                      <div className="w-20 h-4 bg-gray-200 dark:bg-gray-700 rounded animate-pulse"></div>
+                      <div className="w-12 h-3 bg-gray-200 dark:bg-gray-700 rounded animate-pulse"></div>
+                    </div>
+                  ) : user ? (
+                    <>
+                      <p className="font-semibold text-sm text-gray-800 dark:text-gray-200 truncate">{`${user.firstName} ${user.lastName}`}</p>
+                      <p className="text-xs text-gray-500 dark:text-gray-400 capitalize">{user.role}</p>
+                    </>
+                  ) : null}
+                </motion.div>
+              )}
+            </AnimatePresence>
+          </div>
           <AnimatePresence>
-            {isOpen && (
-              <motion.div 
-                className="ml-3 whitespace-nowrap"
-                initial={{ opacity: 0, x: -10 }}
-                animate={{ opacity: 1, x: 0, transition: { delay: 0.1 } }}
-                exit={{ opacity: 0, x: -10 }}
+            {isOpen && !isLoading && user && (
+              <motion.button 
+                onClick={handleLogout}
+                className="p-2 text-gray-500 dark:text-gray-400 hover:bg-red-100 dark:hover:bg-red-800/50 hover:text-red-600 dark:hover:text-red-400 rounded-full flex-shrink-0"
+                initial={{ opacity: 0, scale: 0.5 }}
+                animate={{ opacity: 1, scale: 1, transition: { delay: 0.2 } }}
+                exit={{ opacity: 0, scale: 0.5 }}
+                aria-label="Déconnexion"
               >
-                                <p className="font-semibold text-sm text-gray-800 dark:text-gray-200">John Doe</p>
-                                <p className="text-xs text-gray-500 dark:text-gray-400">Admin</p>
-              </motion.div>
+                <LogOut size={20} />
+              </motion.button>
             )}
           </AnimatePresence>
         </div>
